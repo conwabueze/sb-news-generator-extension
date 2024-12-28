@@ -8,11 +8,19 @@ import GreenCheck from '../assets/GreenCheck.svg'
 export default function Form({ newsType }) {
 
     const [availableChannels, setAvailableChannels] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        channelID: '',
+        linkedinURL: '',
+        totalPosts: 0
+    })
+    const [isLoading, setIsLoading] = useState(true);
     const [formError, setFormError] = useState('form-error-inactive');
     const [serverError, setServerError] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [returnData, setReturnData] = useState({});
+    const [returnData, setReturnData] = useState({
+        successes: 0,
+        errors: 0
+    });
 
     useEffect(() => {
         async function getAvailableChannels() {
@@ -45,6 +53,15 @@ export default function Form({ newsType }) {
         getAvailableChannels();
     }, []); // Empty dependency array ensures it runs only once on mount
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            [name]: value,
+        }));
+
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -76,8 +93,11 @@ export default function Form({ newsType }) {
             })
             setIsLoading(false);
             setSuccess(true);
-            setReturnData(res.response.data);
-            console.log(returnData);
+            console.log(res);
+            setReturnData({
+                successes: res.data.data.successes,
+                errors: res.data.data.errors.totalErrors
+            });
 
         } catch (error) {
             if (error.response.data.error === 'ERROR_PULLING_POSTS' || error.response.data.error === 'ZERO_POSTS_RETURNED') {
@@ -88,66 +108,73 @@ export default function Form({ newsType }) {
 
     }
 
-    function RenderComponents() {
-        if(success){ 
-                return (
-                    <>
-                        <img className="success-image" src={GreenCheck}/>
-                        <div>Staffbase was able to generate x out of y posts from LinkedIn</div>
-                    </>
-                )
-        }
-        if (!isLoading) {
-            return (
-                <>
-                    <Link to="/" className="back-button"><AiOutlineArrowLeft /></Link>
-                    <form onSubmit={handleSubmit} style={{ display: isLoading ? 'none' : 'flex' }}>
-                        <div className="form-field">
-                            <label htmlFor="channelID">Channel Name</label>
-                            <select name="channelID" id="channels-dropdown-form">
-                                {availableChannels}
-                            </select>
-                        </div>
-                        <div className={`form-field ${formError}`}>
-                            <label htmlFor="linkedinURL">LinkedIn Company URL</label>
-                            <input
-                                type="text"
-                                id="linkedinURL"
-                                name="linkedinURL"
-                                placeholder="ex: 'https://www.linkedin.com/company/staffbase/'"
-                                required
-                            //onChange={handleChange}
-                            //value="https://www.linkedin.com/company/staffbase/"
-
-                            />
-                            <span>Error: Please make sure you are using the correct company URL. If problem persist, please reach out to the SE Team</span>
-                        </div>
-                        <div className="form-field">
-                            <label htmlFor="totalPosts">Total Posts</label>
-                            <input
-                                type="number"
-                                id="totalPosts"
-                                name="totalPosts"
-                                placeholder="ex: '10, 20, 30'"
-                                required
-                            />
-                        </div>
-                        <button className="submit-button" type="submit">Generate Post</button>
-                    </form>
-                </>
-            )
-        } else if (isLoading) {
-            return (
-                <>
-                    <div className="loading-message" style={{ display: isLoading ? 'flex' : 'none' }}><Loading /></div>
-                </>
-            )
-        }
+    const clickLoadingBackButton = (e) =>{
+        setIsLoading(false);
+        console.log('clicked')
     }
 
     return (
         <>
-            <RenderComponents />
+            {!isLoading && !success && (
+                <>
+                    <Link to="/" className="back-button"><AiOutlineArrowLeft /></Link>
+                    <div>
+                        <form onSubmit={handleSubmit} style={{ display: isLoading ? 'none' : 'flex' }}>
+                            <div className="form-field">
+                                <label htmlFor="channelID">Channel Name</label>
+                                <select name="channelID" id="channels-dropdown-form">
+                                    {availableChannels}
+                                </select>
+                            </div>
+                            <div className={`form-field ${formError}`}>
+                                <label htmlFor="linkedinURL">LinkedIn Company URL</label>
+                                <input
+                                    type="text"
+                                    id="linkedinURL"
+                                    name="linkedinURL"
+                                    placeholder="ex: 'https://www.linkedin.com/company/staffbase/'"
+                                    value={formData.linkedinURL}
+                                    onChange={handleChange}
+                                    required
+
+                                //value="https://www.linkedin.com/company/staffbase/"
+
+                                />
+                                <span>Error: Please make sure you are using the correct company URL. If problem persist, please reach out to the SE Team</span>
+                            </div>
+                            <div className="form-field">
+                                <label htmlFor="totalPosts">Total Posts</label>
+                                <input
+                                    type="number"
+                                    id="totalPosts"
+                                    name="totalPosts"
+                                    placeholder="ex: '10, 20, 30'"
+                                    value={formData.totalPosts}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                            <button className="submit-button" type="submit">Generate Post</button>
+                        </form>
+                    </div>
+                </>
+
+            )}
+
+            {isLoading && (
+                <>
+                    <Link className="back-button" onClick={clickLoadingBackButton}><AiOutlineArrowLeft /></Link>
+                    <div className="loading-message" style={{ display: isLoading ? 'flex' : 'none' }}><Loading /></div>
+                </>
+            )}
+
+            {success && (
+                <>
+                    <Link to="/" className="back-button"><AiOutlineArrowLeft /></Link>
+                    <img className="success-image" src={GreenCheck} />
+                    <div>{`Staffbase was able to generate ${returnData.successes} out of ${formData.totalPosts} posts from LinkedIn. We encounted ${returnData.errors} Articles that failed to generate on the way`}</div>
+                </>
+            )}
         </>
     );
 }

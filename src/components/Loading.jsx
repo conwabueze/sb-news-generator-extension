@@ -32,7 +32,6 @@ export default function Loading() {
     }, []);
     return (
         <>
-            <Link to="/" className="back-button"><AiOutlineArrowLeft /></Link>
             <BarLoader className="loading-animation" cssOverride={{ width: '60%' }} color="#F5F5F5" />
             <span className='animation-caption'>Loading...</span>
             <span className='loading-caption'>{countdown!==0 ? `Please wait ${countdown} seconds to see if there issue is any issue with the URL you provided` : exitMessage}</span>
